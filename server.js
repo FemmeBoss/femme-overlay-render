@@ -2,6 +2,8 @@ const express = require('express');
 const sharp = require('sharp');
 const axios = require('axios');
 const FormData = require('form-data');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
@@ -10,9 +12,21 @@ const CLOUDINARY_CLOUD_NAME = 'drsopn5st';
 const CLOUDINARY_PRESET = 'femme_overlay';
 const CLOUDINARY_FOLDER = 'overlays';
 
+// === ESCAPE DANGEROUS CHARS ===
+const escapeHtml = (unsafe = '') => {
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 const cloudinaryUpload = async (buffer) => {
   const form = new FormData();
-  form.append('file', `data:image/png;base64,${buffer.toString('base64')}`);
+  const base64 = buffer.toString('base64');
+
+  form.append('file', `data:image/png;base64,${base64}`);
   form.append('upload_preset', CLOUDINARY_PRESET);
   form.append('folder', CLOUDINARY_FOLDER);
 
@@ -26,57 +40,49 @@ const cloudinaryUpload = async (buffer) => {
 };
 
 app.post('/render', async (req, res) => {
-  const { title, desc, bg } = req.body;
+  let { title, desc, bg } = req.body;
+
+  // TEST FALLBACK — you can remove this later
+  title = title || "Test & Validate";
+  desc = desc || "Kitchen & Dining > Cozy 'Nooks' & Sunrooms";
+  bg = bg || "https://res.cloudinary.com/drsopn5st/image/upload/v1745530957/femme_boss/n87obgtgdmy7axcwplif.png";
 
   try {
+    const css = fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8');
     const bgImage = await axios.get(bg, { responseType: 'arraybuffer' });
+
+    const safeTitle = escapeHtml(title);
+    const safeDesc = escapeHtml(desc);
+
+    console.log('🧪 Title (safe):', safeTitle);
+    console.log('🧪 Desc  (safe):', safeDesc);
 
     const svgOverlay = `
       <svg width="1080" height="1350" xmlns="http://www.w3.org/2000/svg">
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Playfair+Display:ital@1&display=swap');
-
-          .bg-box { fill: white; opacity: 0.8; rx: 20; }
-          .title {
-            font-family: 'Cinzel', serif;
-            font-size: 80px;
-            font-weight: 700;
-            fill: #000000;
-          }
-          .desc {
-            font-family: 'Playfair Display', serif;
-            font-size: 48px;
-            font-style: italic;
-            fill: #000000;
-          }
-        </style>
-
-        <!-- Semi-transparent white rectangle -->
-        <rect class="bg-box" x="60" y="1000" width="960" height="250" />
-
-        <!-- Title and Description -->
-        <text x="80" y="1120" class="title">${title}</text>
-        <text x="80" y="1200" class="desc">${desc}</text>
+        <style>${css}</style>
+        <rect x="140" y="475" width="800" height="400" rx="20" ry="20" fill="#ffffff" fill-opacity="0.8" />
+        <text x="540" y="620" text-anchor="middle" class="title">${safeTitle}</text>
+        <text x="540" y="700" text-anchor="middle" class="desc">${safeDesc}</text>
       </svg>
     `;
 
-    const overlayBuffer = Buffer.from(svgOverlay);
     const finalImage = await sharp(bgImage.data)
       .resize(1080, 1350)
-      .composite([{ input: overlayBuffer, top: 0, left: 0 }])
+      .composite([{ input: Buffer.from(svgOverlay), top: 0, left: 0 }])
       .png()
       .toBuffer();
 
     const imageUrl = await cloudinaryUpload(finalImage);
     res.json({ image_url: imageUrl });
+
   } catch (err) {
-    console.error('❌ Render Error:', err.message);
+    console.error('❌ Render Error:', err);
     res.status(500).send('Overlay rendering failed');
   }
 });
 
 app.get('/', (req, res) => {
-  res.send('🔥 FemmeBoss Overlay Renderer v2.1 is RUNNING!');
+  res.send('🔥 FemmeBoss Renderer — Fully Escaped & Battle-Tested!');
 });
 
 const PORT = process.env.PORT || 3000;
