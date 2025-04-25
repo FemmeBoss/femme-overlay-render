@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Playfair+Display:ital@1&display=swap');
+
+.title {
+  font-family: 'Cinzel', serif;
+  font-size: 70px;
+  font-weight: bold;
+  fill: #000000;
+}
+
+.desc {
+  font-family: 'Playfair Display', serif;
+  font-size: 45px;
+  font-style: italic;
+  fill: #000000;
+}
