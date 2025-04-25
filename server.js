@@ -6,20 +6,18 @@ const FormData = require('form-data');
 const app = express();
 app.use(express.json());
 
-// 🔥 HARD CODED CLOUDINARY CONFIG
-const CLOUDINARY_CLOUD_NAME = 'drsopn5st'; // <- Your Cloudinary cloud name
-const CLOUDINARY_PRESET = 'femme_overlay'; // <- Your unsigned preset name
-const CLOUDINARY_FOLDER = 'overlays';      // <- Optional folder name
+const CLOUDINARY_CLOUD_NAME = 'drsopn5st';
+const CLOUDINARY_PRESET = 'femme_overlay';
+const CLOUDINARY_FOLDER = 'overlays';
 
 const cloudinaryUpload = async (buffer) => {
   const form = new FormData();
-  const base64 = buffer.toString('base64');
-
-  form.append('file', `data:image/png;base64,${base64}`);
-  form.append('upload_preset', 'femme_overlay');
+  form.append('file', `data:image/png;base64,${buffer.toString('base64')}`);
+  form.append('upload_preset', CLOUDINARY_PRESET);
+  form.append('folder', CLOUDINARY_FOLDER);
 
   const res = await axios.post(
-    'https://api.cloudinary.com/v1_1/drsopn5st/image/upload',
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
     form,
     { headers: form.getHeaders() }
   );
@@ -34,18 +32,35 @@ app.post('/render', async (req, res) => {
     const bgImage = await axios.get(bg, { responseType: 'arraybuffer' });
 
     const svgOverlay = `
-      <svg width="1080" height="1350">
+      <svg width="1080" height="1350" xmlns="http://www.w3.org/2000/svg">
         <style>
-          .title { fill: black; font-size: 90px; font-family: "Times New Roman"; font-weight: bold; }
-          .desc { fill: black; font-size: 50px; font-family: "Times New Roman"; }
+          @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Playfair+Display:ital@1&display=swap');
+
+          .bg-box { fill: white; opacity: 0.8; rx: 20; }
+          .title {
+            font-family: 'Cinzel', serif;
+            font-size: 80px;
+            font-weight: 700;
+            fill: #000000;
+          }
+          .desc {
+            font-family: 'Playfair Display', serif;
+            font-size: 48px;
+            font-style: italic;
+            fill: #000000;
+          }
         </style>
-        <text x="60" y="1100" class="title">${title}</text>
-        <text x="60" y="1200" class="desc">${desc}</text>
+
+        <!-- Semi-transparent white rectangle -->
+        <rect class="bg-box" x="60" y="1000" width="960" height="250" />
+
+        <!-- Title and Description -->
+        <text x="80" y="1120" class="title">${title}</text>
+        <text x="80" y="1200" class="desc">${desc}</text>
       </svg>
     `;
 
     const overlayBuffer = Buffer.from(svgOverlay);
-
     const finalImage = await sharp(bgImage.data)
       .resize(1080, 1350)
       .composite([{ input: overlayBuffer, top: 0, left: 0 }])
@@ -61,8 +76,8 @@ app.post('/render', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('🔥 FemmeBoss Overlay Renderer (Hardcoded Cloudinary) is LIVE!');
+  res.send('🔥 FemmeBoss Overlay Renderer v2.1 is RUNNING!');
 });
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
