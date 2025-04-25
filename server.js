@@ -16,11 +16,10 @@ const cloudinaryUpload = async (buffer) => {
   const base64 = buffer.toString('base64');
 
   form.append('file', `data:image/png;base64,${base64}`);
-  form.append('upload_preset', CLOUDINARY_PRESET);
-  form.append('folder', CLOUDINARY_FOLDER);
+  form.append('upload_preset', 'femme_overlay');
 
   const res = await axios.post(
-    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+    'https://api.cloudinary.com/v1_1/drsopn5st/image/upload',
     form,
     { headers: form.getHeaders() }
   );
