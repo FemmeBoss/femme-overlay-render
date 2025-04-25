@@ -8,20 +8,22 @@ const path = require('path');
 const app = express();
 app.use(express.json());
 
+// 🔐 Cloudinary Configuration
 const CLOUDINARY_CLOUD_NAME = 'drsopn5st';
 const CLOUDINARY_PRESET = 'femme_overlay';
 const CLOUDINARY_FOLDER = 'overlays';
 
-// === ESCAPE DANGEROUS CHARS ===
+// 🧼 Escape characters for safe SVG injection
 const escapeHtml = (unsafe = '') => {
   return String(unsafe)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 };
 
+// ☁️ Upload to Cloudinary
 const cloudinaryUpload = async (buffer) => {
   const form = new FormData();
   const base64 = buffer.toString('base64');
@@ -39,51 +41,52 @@ const cloudinaryUpload = async (buffer) => {
   return res.data.secure_url;
 };
 
+// 🖼️ Overlay Generator
 app.post('/render', async (req, res) => {
-  let { title, desc, bg } = req.body;
+  const { title, desc, bg } = req.body;
 
-  // TEST FALLBACK — you can remove this later
-  title = title || "Test & Validate";
-  desc = desc || "Kitchen & Dining > Cozy 'Nooks' & Sunrooms";
-  bg = bg || "https://res.cloudinary.com/drsopn5st/image/upload/v1745530957/femme_boss/n87obgtgdmy7axcwplif.png";
+  const css = fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8');
+  const bgImage = await axios.get(bg, { responseType: 'arraybuffer' });
 
-  try {
-    const css = fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8');
-    const bgImage = await axios.get(bg, { responseType: 'arraybuffer' });
+  const safeTitle = escapeHtml(title);
+  const safeDesc = escapeHtml(desc);
 
-    const safeTitle = escapeHtml(title);
-    const safeDesc = escapeHtml(desc);
+  const svgOverlay = `
+  <svg width="1080" height="1350" xmlns="http://www.w3.org/2000/svg">
+    <style>${css}</style>
+    <rect x="140" y="475" width="800" height="400" rx="20" ry="20" fill="#ffffff" fill-opacity="0.85"/>
+    <text x="540" y="610" text-anchor="middle" class="title">${safeTitle}</text>
+    
+    <foreignObject x="190" y="660" width="700" height="250">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="
+        font-family: 'Playfair Display', serif;
+        font-size: 40px;
+        font-style: italic;
+        color: #111;
+        text-align: center;
+        line-height: 1.4;
+      ">
+        ${safeDesc}
+      </div>
+    </foreignObject>
+  </svg>
+`;
 
-    console.log('🧪 Title (safe):', safeTitle);
-    console.log('🧪 Desc  (safe):', safeDesc);
+  const finalImage = await sharp(bgImage.data)
+    .resize(1080, 1350)
+    .composite([{ input: Buffer.from(svgOverlay), top: 0, left: 0 }])
+    .png()
+    .toBuffer();
 
-    const svgOverlay = `
-      <svg width="1080" height="1350" xmlns="http://www.w3.org/2000/svg">
-        <style>${css}</style>
-        <rect x="140" y="475" width="800" height="400" rx="20" ry="20" fill="#ffffff" fill-opacity="0.8" />
-        <text x="540" y="620" text-anchor="middle" class="title">${safeTitle}</text>
-        <text x="540" y="700" text-anchor="middle" class="desc">${safeDesc}</text>
-      </svg>
-    `;
-
-    const finalImage = await sharp(bgImage.data)
-      .resize(1080, 1350)
-      .composite([{ input: Buffer.from(svgOverlay), top: 0, left: 0 }])
-      .png()
-      .toBuffer();
-
-    const imageUrl = await cloudinaryUpload(finalImage);
-    res.json({ image_url: imageUrl });
-
-  } catch (err) {
-    console.error('❌ Render Error:', err);
-    res.status(500).send('Overlay rendering failed');
-  }
+  const imageUrl = await cloudinaryUpload(finalImage);
+  res.json({ image_url: imageUrl });
 });
 
+// 🔁 Health Check
 app.get('/', (req, res) => {
-  res.send('🔥 FemmeBoss Renderer — Fully Escaped & Battle-Tested!');
+  res.send('🔥 FemmeBoss Renderer is LIVE — FINAL CLEAN PATCH');
 });
 
+// 🚀 Launch Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
