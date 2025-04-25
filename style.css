@@ -2,26 +2,30 @@
   font-family: 'Cinzel Decorative';
   font-style: normal;
   font-weight: 700;
-  src: url(data:font/woff2;charset=utf-8;base64,PASTE_CINZEL_WOFF2_HERE) format('woff2');
+  src: url("data:font/woff2;base64,d09GMgABAAAAAAp8ABAAAAAAlfQAAAN2AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHEIGVgCDHAqDfIRIFATYCJAOCQgABCAFhG0HUR0fA1UHyZ8eAnwQwYCL6f3X7wAAAAAAAAAAAAAA") format('woff2');
 }
 
 @font-face {
   font-family: 'Playfair Display';
   font-style: italic;
   font-weight: 400;
-  src: url(data:font/woff2;charset=utf-8;base64,PASTE_PLAYFAIR_WOFF2_HERE) format('woff2');
+  src: url("data:font/woff2;base64,d09GMgABAAAAAAqUABAAAAAAqYgAAATWAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHEIGVgCDHAqDfIRIFATYCJAOCQgABCAFhG0HUR0fA1UHyZ8eAnwQwYCPx8mPfUAAAAAAAAAAAAAA") format('woff2');
 }
 
 .title {
   font-family: 'Cinzel Decorative', serif;
-  font-size: 65px;
+  font-size: 72px;
   font-weight: 700;
-  fill: #111111;
+  fill: #111;
+  dominant-baseline: middle;
+  text-anchor: middle;
 }
 
 .desc {
   font-family: 'Playfair Display', serif;
   font-size: 40px;
   font-style: italic;
-  fill: #111111;
+  fill: #111;
+  dominant-baseline: middle;
+  text-anchor: middle;
 }
